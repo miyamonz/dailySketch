@@ -1,0 +1,11 @@
+/bin/*
+!/bin/data/
+
+
+*.xcodeproj
+*.app/
+config.make
+*.xcconfig
+
+Makefile
+openFrameworks-Info.plist
