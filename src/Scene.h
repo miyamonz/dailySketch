@@ -21,6 +21,7 @@ struct Scene : public ofBaseApp {
         return scene;
     }
     void add(SceneRef scene) {
+        scene->setupAll();
         children.emplace_back(scene);
         scene->parent = this;
     }
@@ -36,26 +37,59 @@ struct Scene : public ofBaseApp {
     using FP = void(Scene::*)(Args...);
 
     template<class... Args, class FP_ = FP<Args...>>
-    void repeatMethod(FP_ ptr, Args... args) {
+    void recursiveCall(FP_ ptr, Args... args) {
         auto fn = std::bind(ptr, this, args...);
         fn(args...);
-        for(auto&& c : children) c->repeatMethod(ptr, args...);
+        for(auto&& c : children) c->recursiveCall(ptr, args...);
     }
+    
+    template<class... Args, class FP_ = FP<Args...>>
+    void recursiveCall(array<FP_,2> ptrs, Args... args) {
+        auto fn0 = std::bind(ptrs[0], this, args...);
+        auto fn1 = std::bind(ptrs[1], this, args...);
+        
+        fn0(args...);
+        for(auto&& c : children) c->recursiveCall(ptrs, args...);
+        fn1(args...);
+    }
+    
     virtual void setup() { time = 0; }
-    virtual void update() {
+    virtual void updateTime() {
         time += ofGetLastFrameTime();
     }
     virtual void removeChild() {
         ofRemove(children, [](SceneRef scene){ return scene->isDone(); });
         children.shrink_to_fit();
     }
-    virtual void setupAll()  { repeatMethod(&Scene::setup); }
-    virtual void updateAll() { repeatMethod(&Scene::update); repeatMethod(&Scene::removeChild); }
-    virtual void drawAll()   { repeatMethod(&Scene::draw); }
+    virtual void setupAll()  { recursiveCall(&Scene::setup); }
+    virtual void updateAll() {
+        recursiveCall(&Scene::updateTime);
+        recursiveCall(&Scene::update);
+        recursiveCall(&Scene::removeChild);
+    }
+    
+    virtual void baseDraw() {
+        array<FP<>,2> ptrs = {
+            &Scene::_draw,
+            &Scene::afterDraw
+        };
+        recursiveCall(ptrs);
+    }
+    virtual void _draw() {
+        beforeDraw();
+        draw();
+    }
+    virtual void beforeDraw() {}
+    virtual void afterDraw() {}
+    virtual void drawAll()   {
+        baseDraw();
+    }
+    virtual void kerPressed(int key) {}
+    virtual void keyPressedAll(int key) { recursiveCall(&Scene::keyPressed, key); }
+    virtual void mousePressedAll(int x, int y, int button) { recursiveCall(&Scene::mousePressed, x, y, button); }
+    virtual void mouseDraggedAll(int x, int y, int button) { recursiveCall(&Scene::mouseDragged, x, y, button); }
     
     
-    
-    virtual void mousePressedAll(int x, int y, int button) { repeatMethod(&Scene::mousePressed, x, y, button); }
     
     bool bDone = false;
     virtual bool isDone() {
@@ -65,6 +99,7 @@ struct Scene : public ofBaseApp {
 
 SceneRef Scene::createRoot() {
     auto scene = make_shared<Scene>();
+    scene->name = "root";
     return scene;
 }
 
