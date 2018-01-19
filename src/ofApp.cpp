@@ -2,69 +2,87 @@
 #include "ofxQ.h"
 
 #include "Scene.h"
-#include "201710.h"
-#include "20171126.h"
-#include "20171203.h"
-#include "20171210.h"
 
-using namespace ofxChoreograph;
-using TimelineRef = shared_ptr<Timeline>;
-SceneRef mainScene;
-shared_ptr<Sketch_20171210> grid;
+#include "2017-12-11.h"
 
+shared_ptr<SearchScene> mainScene;
+
+struct Kaisou;
+using KaisouRef = shared_ptr<Kaisou>;
+struct Kaisou {
+    using Self = Kaisou;
+    vector<KaisouRef> children;
+    
+public:
+    string name = "";
+    //add child
+    template<typename S, typename... Args>
+    KaisouRef add(Args... args) {
+        auto scene = make_shared<Kaisou>(args...);
+        add(scene);
+        return scene;
+    }
+    void add(KaisouRef scene) {
+        children.emplace_back(scene);
+    }
+    
+    template<class Fn, typename... Args>
+    void update(Fn fn, Args... args) {
+        fn(*this, args...);
+        for(auto&& c : children) c->update<Fn,Args...>(fn, args...);
+    }
+};
+class DailyScene : public Scene {
+public:
+    DailyScene(string _name) {
+        name = _name;
+    }
+    void baseUpdate() override {
+        for(auto c : children) c->baseUpdate();
+    }
+};
+
+
+KaisouRef a, b;
 //--------------------------------------------------------------
 void ofApp::setup(){
-    mainScene = make_shared<Scene>();
-    grid = make_shared<Sketch_20171210>();
-    grid->finishFn = [=] {
-        ofVec2f pos = (ofVec2f)grid->dot;
-        int num = ofRandom(3,10);
-        mainScene->add<Sketch_20171203>(pos,num);
-//        mainScene->add<Sketch_20171116>(pos);
+    mainScene = make_shared<SearchScene>();
+    mainScene->setRepeat();
+    mainScene->setAutoPlay();
+    
+    mainScene->add<DailyScene>("1211")->add<Circle>();
+    mainScene->add<DailyScene>("1212")->add<Circle>();
+    
+    mainScene->baseSetup();
+    
+    a = make_shared<Kaisou>();
+    b = make_shared<Kaisou>();
+    a->name = "aaa";
+    b->name = "bbb";
+    a->add(b);
+    
+    auto fn = [](Kaisou& k, string& str){
+        ofLog() << k.name;
+        str += k.name;
     };
-    mainScene->add(grid);
-    mainScene->setup();
+    string s = "0";
+    a->update<decltype(fn), string&>(fn, s);
+    ofLog() << "s: " << s;
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    mainScene->timeline->step(ofGetLastFrameTime());
     mainScene->baseUpdate();
-    ofLog() << mainScene->children.size();
 }
 
-
-void drawTimeline(TimelineRef tl, ofVec2f pos) {
-    ofPushMatrix();
-    ofTranslate(pos);
-    ofTranslate(tl->getStartTime(), 0);
-    ofDrawRectangle(0, 0, tl->getDuration(), 9);
-    ofSetColor(255,0,0);
-    ofDrawRectangle(tl->getStartTime() + tl->time(), 0, 0.1, 9);
-    ofPopMatrix();
-    
-}
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofSetColor(255);
     mainScene->baseDraw();
     
-    ofTranslate(ofGetWindowWidth()/2,0);
-    ofScale(10,1);
-    auto& tl = mainScene->timeline;
     int y = 0;
-    ofSetColor(255);
-    drawTimeline(tl, ofVec2f(0, 10 * y++));
-    for(auto child : mainScene->children) {
-        auto& tl = child->timeline;
-        ofSetColor(240,255,255);
-        drawTimeline(tl, ofVec2f(0, 10 * y++));
-        for(auto mago : child->children) {
-            auto& tl = mago->timeline;
-            ofSetColor(255,230,255);
-            drawTimeline(tl, ofVec2f(0, 10 * y++));
-        }
-        
+    for(auto name : mainScene->getNames()) {
+        ofDrawBitmapString(name, 20, ++y * 20);
     }
 }
 
@@ -73,15 +91,7 @@ void ofApp::keyPressed(int key){
     if(key == ' ') {
         setup();
     }
-    if(key == 'a') {
-        int num = ofRandom(3,10);
-        ofVec2f pos = grid->dot;
-        for(int i=1; i<=3; i++) {
-            auto scene = make_shared<Sketch_20171116>(pos, 50*i);
-            scene->timeline->setStartTime(i * 1000);
-            mainScene->add(scene);
-        }
-    }
+    if(key == 'x') mainScene->next();
 }
 
 //--------------------------------------------------------------
