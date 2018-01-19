@@ -25,7 +25,15 @@ struct Circle : public Scene {
     }
 };
 
+struct Mouse : public Scene {
+    void mousePressed(int x,int y, int button) override {
+        ofLog() << x << " "<< y;
+    }
+};
+
 SceneRef root;
+
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     ofSetCircleResolution(50);
@@ -35,6 +43,7 @@ void ofApp::setup(){
     
     auto c = ofGetWindowSize()/2;
     root->add<Circle>(c);
+    root->add<Mouse>();
     
     root->setupAll();
 }
@@ -78,6 +87,7 @@ void ofApp::mouseDragged(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
     root->add<Circle>(x,y);
+    root->mousePressedAll(x,y,button);
 }
 
 //--------------------------------------------------------------

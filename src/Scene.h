@@ -32,11 +32,14 @@ struct Scene : public ofBaseApp {
         for(auto&& c : children) c->_repeat<Fn,Args...>(fn, args...);
     }
     
-    using FP = void(Scene::*)();
-    void repeatMethod(FP ptr) {
-        auto fn = std::bind(ptr, this);
-        fn();
-        for(auto&& c : children) c->repeatMethod(ptr);
+    template<class... Args>
+    using FP = void(Scene::*)(Args...);
+
+    template<class... Args, class FP_ = FP<Args...>>
+    void repeatMethod(FP_ ptr, Args... args) {
+        auto fn = std::bind(ptr, this, args...);
+        fn(args...);
+        for(auto&& c : children) c->repeatMethod(ptr, args...);
     }
     virtual void setup() { time = 0; }
     virtual void update() {
@@ -49,6 +52,10 @@ struct Scene : public ofBaseApp {
     virtual void setupAll()  { repeatMethod(&Scene::setup); }
     virtual void updateAll() { repeatMethod(&Scene::update); repeatMethod(&Scene::removeChild); }
     virtual void drawAll()   { repeatMethod(&Scene::draw); }
+    
+    
+    
+    virtual void mousePressedAll(int x, int y, int button) { repeatMethod(&Scene::mousePressed, x, y, button); }
     
     bool bDone = false;
     virtual bool isDone() {
