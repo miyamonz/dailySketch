@@ -3,87 +3,35 @@
 
 #include "Scene.h"
 
-#include "2017-12-11.h"
-
-shared_ptr<SearchScene> mainScene;
-
-struct Kaisou;
-using KaisouRef = shared_ptr<Kaisou>;
-struct Kaisou {
-    using Self = Kaisou;
-    vector<KaisouRef> children;
-    
-public:
-    string name = "";
-    //add child
-    template<typename S, typename... Args>
-    KaisouRef add(Args... args) {
-        auto scene = make_shared<Kaisou>(args...);
-        add(scene);
-        return scene;
-    }
-    void add(KaisouRef scene) {
-        children.emplace_back(scene);
-    }
-    
-    template<class Fn, typename... Args>
-    void update(Fn fn, Args... args) {
-        fn(*this, args...);
-        for(auto&& c : children) c->update<Fn,Args...>(fn, args...);
-    }
-};
-class DailyScene : public Scene {
-public:
-    DailyScene(string _name) {
-        name = _name;
-    }
-    void baseUpdate() override {
-        for(auto c : children) c->baseUpdate();
+struct Circle : public Scene {
+    float radius;
+    Circle(float r = 100) : radius(r), Scene()
+    {}
+    void draw() override {
+        ofDrawCircle(0, 0, radius);
     }
 };
 
-
-KaisouRef a, b;
+SceneRef root;
 //--------------------------------------------------------------
 void ofApp::setup(){
-    mainScene = make_shared<SearchScene>();
-    mainScene->setRepeat();
-    mainScene->setAutoPlay();
+    root = Scene::createRoot();
     
-    mainScene->add<DailyScene>("1211")->add<Circle>();
-    mainScene->add<DailyScene>("1212")->add<Circle>();
+    auto circle = make_shared<Circle>();
+    root->add(circle);
     
-    mainScene->baseSetup();
-    
-    a = make_shared<Kaisou>();
-    b = make_shared<Kaisou>();
-    a->name = "aaa";
-    b->name = "bbb";
-    a->add(b);
-    
-    auto fn = [](Kaisou& k, string& str){
-        ofLog() << k.name;
-        str += k.name;
-    };
-    string s = "0";
-    a->update<decltype(fn), string&>(fn, s);
-    ofLog() << "s: " << s;
+    root->setupAll();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    mainScene->baseUpdate();
+    root->updateAll();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofSetColor(255);
-    mainScene->baseDraw();
-    
-    int y = 0;
-    for(auto name : mainScene->getNames()) {
-        ofDrawBitmapString(name, 20, ++y * 20);
-    }
+    root->drawAll();
 }
 
 //--------------------------------------------------------------
@@ -91,7 +39,6 @@ void ofApp::keyPressed(int key){
     if(key == ' ') {
         setup();
     }
-    if(key == 'x') mainScene->next();
 }
 
 //--------------------------------------------------------------
