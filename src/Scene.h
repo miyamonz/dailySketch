@@ -2,7 +2,7 @@
 struct Scene;
 using SceneRef = shared_ptr<Scene>;
 
-struct Scene {
+struct Scene : public ofBaseApp {
     string name;
     float time;
     Scene() : time(0)
@@ -10,18 +10,19 @@ struct Scene {
     
     static SceneRef createRoot();
     
-    SceneRef parent = nullptr;
+    Scene* parent = nullptr;
     vector<SceneRef> children;
     
     //add child
     template<typename S = Scene, typename... Args>
     shared_ptr<S> add(Args... args) {
         auto scene = make_shared<S>(args...);
-        add(scene);
+        add((SceneRef)scene);
         return scene;
     }
     void add(SceneRef scene) {
         children.emplace_back(scene);
+        scene->parent = this;
     }
     
     //kaisou
@@ -31,34 +32,33 @@ struct Scene {
         for(auto&& c : children) c->_repeat<Fn,Args...>(fn, args...);
     }
     
-    // setup update draw
-    virtual void setup() {
-        time = 0;
+    using FP = void(Scene::*)();
+    void repeatMethod(FP ptr) {
+        auto fn = std::bind(ptr, this);
+        fn();
+        for(auto&& c : children) c->repeatMethod(ptr);
     }
-    virtual void setupAll() {
-        auto fn = std::bind(&Scene::setup, this);
-        _repeat(fn);
-    }
+    virtual void setup() { time = 0; }
     virtual void update() {
         time += ofGetLastFrameTime();
-        for(auto child : children) child->update();
-//        ofRemove(children, [](SceneRef scene){ return scene->isEnd(); });
+    }
+    virtual void removeChild() {
+        ofRemove(children, [](SceneRef scene){ return scene->isDone(); });
         children.shrink_to_fit();
     }
-    virtual void updateAll() {
-        auto fn = std::bind(&Scene::update, this);
-        _repeat(fn);
-    }
-    virtual void draw() {}
-    virtual void drawAll() {
-        auto fn = std::bind(&Scene::draw, this);
-        _repeat(fn);
-    }
+    virtual void setupAll()  { repeatMethod(&Scene::setup); }
+    virtual void updateAll() { repeatMethod(&Scene::update); repeatMethod(&Scene::removeChild); }
+    virtual void drawAll()   { repeatMethod(&Scene::draw); }
     
+    bool bDone = false;
+    virtual bool isDone() {
+        return bDone;
+    }
 };
 
 SceneRef Scene::createRoot() {
-    return make_shared<Scene>();
+    auto scene = make_shared<Scene>();
+    return scene;
 }
 
 //class SerialScene : public Scene {
