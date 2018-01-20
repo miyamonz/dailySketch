@@ -1,29 +1,31 @@
 #pragma once
-struct Scene;
-using SceneRef = shared_ptr<Scene>;
 
-struct Scene : public ofBaseApp {
+namespace ofx {
+    
+struct Component;
+using ComponentRef = shared_ptr<Component>;
+
+struct Component : public ofBaseApp {
     string name;
     float time;
-    Scene() : time(0)
+    Component() : time(0)
     {}
     
-    static SceneRef createRoot();
+    static ComponentRef createRoot();
     
-    Scene* parent = nullptr;
-    vector<SceneRef> children;
+    Component* parent = nullptr;
+    vector<ComponentRef> children;
     
     //add child
-    template<typename S = Scene, typename... Args>
+    template<typename S = Component, typename... Args>
     shared_ptr<S> add(Args... args) {
-        auto scene = make_shared<S>(args...);
-        add((SceneRef)scene);
-        return scene;
+        auto com = make_shared<S>(args...);
+        add((ComponentRef)com);
+        return com;
     }
-    void add(SceneRef scene) {
-        scene->setupAll();
-        children.emplace_back(scene);
-        scene->parent = this;
+    void add(ComponentRef com) {
+        children.emplace_back(com);
+        com->parent = this;
     }
     
     //kaisou
@@ -34,7 +36,7 @@ struct Scene : public ofBaseApp {
     }
     
     template<class... Args>
-    using FP = void(Scene::*)(Args...);
+    using FP = void(Component::*)(Args...);
 
     template<class... Args, class FP_ = FP<Args...>>
     void recursiveCall(FP_ ptr, Args... args) {
@@ -58,20 +60,20 @@ struct Scene : public ofBaseApp {
         time += ofGetLastFrameTime();
     }
     virtual void removeChild() {
-        ofRemove(children, [](SceneRef scene){ return scene->isDone(); });
+        ofRemove(children, [](ComponentRef com){ return com->isDone(); });
         children.shrink_to_fit();
     }
-    virtual void setupAll()  { recursiveCall(&Scene::setup); }
+    virtual void setupAll()  { recursiveCall(&Component::setup); }
     virtual void updateAll() {
-        recursiveCall(&Scene::updateTime);
-        recursiveCall(&Scene::update);
-        recursiveCall(&Scene::removeChild);
+        recursiveCall(&Component::updateTime);
+        recursiveCall(&Component::update);
+        recursiveCall(&Component::removeChild);
     }
     
     virtual void baseDraw() {
         array<FP<>,2> ptrs = {
-            &Scene::_draw,
-            &Scene::afterDraw
+            &Component::_draw,
+            &Component::afterDraw
         };
         recursiveCall(ptrs);
     }
@@ -84,12 +86,9 @@ struct Scene : public ofBaseApp {
     virtual void drawAll()   {
         baseDraw();
     }
-    virtual void kerPressed(int key) {}
-    virtual void keyPressedAll(int key) { recursiveCall(&Scene::keyPressed, key); }
-    virtual void mousePressedAll(int x, int y, int button) { recursiveCall(&Scene::mousePressed, x, y, button); }
-    virtual void mouseDraggedAll(int x, int y, int button) { recursiveCall(&Scene::mouseDragged, x, y, button); }
-    
-    
+    virtual void keyPressedAll(int key) { recursiveCall(&Component::keyPressed, key); }
+    virtual void mousePressedAll(int x, int y, int button) { recursiveCall(&Component::mousePressed, x, y, button); }
+    virtual void mouseDraggedAll(int x, int y, int button) { recursiveCall(&Component::mouseDragged, x, y, button); }
     
     bool bDone = false;
     virtual bool isDone() {
@@ -97,11 +96,15 @@ struct Scene : public ofBaseApp {
     }
 };
 
-SceneRef Scene::createRoot() {
-    auto scene = make_shared<Scene>();
-    scene->name = "root";
-    return scene;
+ComponentRef Component::createRoot() {
+    auto com = make_shared<Component>();
+    com->name = "root";
+    return com;
 }
+    
+}
+
+#include "Components.h"
 
 //class SerialScene : public Scene {
 //public:
