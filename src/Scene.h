@@ -92,6 +92,10 @@ struct Component : public ofBaseApp {
         mousePressed(x, y, button);
         for(auto&& c : children) c->mousePressedAll(x,y,button);
     }
+    virtual void mouseReleasedAll(int x, int y, int button) {
+        mouseReleased(x, y, button);
+        for(auto&& c : children) c->mouseReleasedAll(x,y,button);
+    }
     virtual void mouseDraggedAll(int x, int y, int button) {
         mouseDragged(x, y, button);
         for(auto&& c : children) c->mouseDraggedAll(x,y,button);

@@ -1,13 +1,16 @@
 #include "ofApp.h"
+static ofVec2f getMouse() {
+    return ofVec2f(ofGetMouseX(), ofGetMouseY());
+}
 #include "ofxQ.h"
 
 #include "Scene.h"
 #include "2018-01-19.h"
 #include "2018-01-20.h"
 
-
-ofx::ComponentRef root, menu;
+ofx::ComponentRef root;
 shared_ptr<ofx::ComponentSerial> scenes;
+shared_ptr<Selector> menu;
 
 vector<string> items;
 //--------------------------------------------------------------
@@ -20,25 +23,27 @@ void ofApp::setup(){
     scenes->add<S20180119>();
     scenes->add<S20180120>();
     
-//    items = {
-//        "aaaa",
-//        "iii",
-//    };
+    items.clear();
+    for(auto s : scenes->children) {
+        items.push_back(s->name);
+    }
     menu = root->add<Selector>(items);
     
     root->setupAll();
+    scenes->setIndex(scenes->children.size() - 1);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     root->updateAll();
+    menu->idx = scenes->getIndex();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     int y = 0;
-    ofDrawBitmapStringHighlight(ofToString(root->time),        0,y+=20);
-    ofDrawBitmapStringHighlight(ofToString(scenes->getIndex()),0,y+=20);
+//    ofDrawBitmapStringHighlight(ofToString(root->time),        0,y+=20);
+//    ofDrawBitmapStringHighlight(ofToString(scenes->getCurrent()->name),0,y+=20);
     ofSetColor(255);
     root->drawAll();
 }
@@ -65,15 +70,17 @@ void ofApp::mouseMoved(int x, int y ){
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
+    root->mouseDraggedAll(x,y,button);
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
+    root->mousePressedAll(x,y,button);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-
+    root->mouseReleasedAll(x,y,button);
 }
 
 //--------------------------------------------------------------

@@ -1,13 +1,7 @@
 #pragma once
-struct CircleExpand : public Circle {
+struct CircleExpand : virtual public Circle {
     using Circle::Circle;
     
-    void setup() override {
-        auto style = ofGetStyle();
-        style.color += ofRandom(-100,100);
-        color = style.color;
-        ofSetColor(color);
-    }
     void draw() override {
         auto e = 1-pow(1-time, 5);
         
@@ -31,8 +25,11 @@ struct Move : public ofx::Component {
     {}
     Move(float x, float y) : Move(ofPoint(x,y))
     {}
+    ofColor color;
     void setup() {
-        add<CircleExpand>(next)->setup();
+        auto c = add<CircleExpand>(next);
+        c->color = color += ofRandom(-50,50);
+        c->setup();
         
         setDirection();
         ofSetColor(color);
@@ -52,34 +49,30 @@ struct Move : public ofx::Component {
             setup();
         }
     }
-    ofColor color = ofRandom(255);
-    void draw() {
-        ofSetColor(color);
-        //        ofDrawCircle(pos, 5);
-    }
 };
+
 struct ClickableViewport : public Viewport {
     using Viewport::Viewport;
-    float h;
+    float hue;
     void keyPressed(int key) {
         ofPoint mouse(ofGetMouseX(), ofGetMouseY());
         
         if(key ==' ') {
             auto mo = make_shared<Move>(mouse - rect.position);
-            mo->color = ofColor::fromHsb(h * 255,100,255);
-            add((ofx::ComponentRef)mo);
+            mo->color = ofColor::fromHsb(hue * 255,100,255);
             mo->setup();
+            add((ofx::ComponentRef)mo);
         }
     }
-
 };
 
 struct S20180119 : ofx::Component {
+    S20180119(){ name = "20180119"; }
     virtual void setup() {
+        children.clear();
         float w = ofGetWindowWidth();
         float h = ofGetWindowHeight();
         
-        children.clear();
         int num = 3;
         for(int x=0; x<num; x++) {
             for(int y=0; y<num; y++) {
@@ -87,7 +80,7 @@ struct S20180119 : ofx::Component {
                 auto hh = h/num;
                 ofRectangle rect(x*ww,y*hh, ww,hh);
                 auto view = add<ClickableViewport>(rect);
-                view->h = float(x+num*y)/num/num;
+                view->hue = float(x+num*y)/num/num;
             }
         }
 
