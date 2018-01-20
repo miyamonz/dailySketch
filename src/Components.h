@@ -45,6 +45,18 @@ struct ViewportRepeat : public ofx::Component {
     }
 };
 
+struct Repeat : virtual ofx::Component {
+    float length;
+    int count = 0;
+    Repeat(float length = 1) : length(length)
+    {}
+    void update() {
+        if(time > length) {
+            time = 0;
+            setup();
+        }
+    }
+};
 
 struct Selector : ofx::Component {
     ofPoint pos;

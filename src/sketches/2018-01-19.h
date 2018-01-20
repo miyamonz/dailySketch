@@ -1,6 +1,7 @@
 #pragma once
 struct CircleExpand : public Circle {
     using Circle::Circle;
+    
     void setup() override {
         auto style = ofGetStyle();
         style.color += ofRandom(-100,100);
@@ -31,7 +32,8 @@ struct Move : public ofx::Component {
     Move(float x, float y) : Move(ofPoint(x,y))
     {}
     void setup() {
-        add<CircleExpand>(next);
+        add<CircleExpand>(next)->setup();
+        
         setDirection();
         ofSetColor(color);
     }
@@ -66,6 +68,7 @@ struct ClickableViewport : public Viewport {
             auto mo = make_shared<Move>(mouse - rect.position);
             mo->color = ofColor::fromHsb(h * 255,100,255);
             add((ofx::ComponentRef)mo);
+            mo->setup();
         }
     }
 
@@ -76,6 +79,7 @@ struct S20180119 : ofx::Component {
         float w = ofGetWindowWidth();
         float h = ofGetWindowHeight();
         
+        children.clear();
         int num = 3;
         for(int x=0; x<num; x++) {
             for(int y=0; y<num; y++) {

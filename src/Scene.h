@@ -39,7 +39,7 @@ struct Component : public ofBaseApp {
     using FP = void(Component::*)(Args...);
 
     template<class... Args, class FP_ = FP<Args...>>
-    void recursiveCall(FP_ ptr, Args... args) {
+     void recursiveCall(FP_ ptr, Args... args) {
         auto fn = std::bind(ptr, this, args...);
         fn(args...);
         for(auto&& c : children) c->recursiveCall(ptr, args...);
@@ -63,32 +63,39 @@ struct Component : public ofBaseApp {
         ofRemove(children, [](ComponentRef com){ return com->isDone(); });
         children.shrink_to_fit();
     }
-    virtual void setupAll()  { recursiveCall(&Component::setup); }
-    virtual void updateAll() {
-        recursiveCall(&Component::updateTime);
-        recursiveCall(&Component::update);
-        recursiveCall(&Component::removeChild);
+    virtual void setupAll()  {
+        setup();
+        for(auto&& c : children) c->setupAll();
+//        recursiveCall(&Component::setup);
     }
     
-    virtual void baseDraw() {
-        array<FP<>,2> ptrs = {
-            &Component::_draw,
-            &Component::afterDraw
-        };
-        recursiveCall(ptrs);
+    virtual void updateAll() {
+        updateTime();
+        update();
+        removeChild();
+        for(auto&& c : children) c->updateAll();
     }
-    virtual void _draw() {
-        beforeDraw();
-        draw();
-    }
+    
     virtual void beforeDraw() {}
     virtual void afterDraw() {}
-    virtual void drawAll()   {
-        baseDraw();
+    virtual void drawAll() {
+        beforeDraw();
+        draw();
+        for(auto&& c : children) c->drawAll();
+        afterDraw();
     }
-    virtual void keyPressedAll(int key) { recursiveCall(&Component::keyPressed, key); }
-    virtual void mousePressedAll(int x, int y, int button) { recursiveCall(&Component::mousePressed, x, y, button); }
-    virtual void mouseDraggedAll(int x, int y, int button) { recursiveCall(&Component::mouseDragged, x, y, button); }
+    virtual void keyPressedAll(int key) {
+        keyPressed(key);
+        for(auto&& c : children) c->keyPressedAll(key);
+    }
+    virtual void mousePressedAll(int x, int y, int button) {
+        mousePressed(x, y, button);
+        for(auto&& c : children) c->mousePressedAll(x,y,button);
+    }
+    virtual void mouseDraggedAll(int x, int y, int button) {
+        mouseDragged(x, y, button);
+        for(auto&& c : children) c->mouseDraggedAll(x,y,button);
+    }
     
     bool bDone = false;
     virtual bool isDone() {
@@ -102,9 +109,35 @@ ComponentRef Component::createRoot() {
     return com;
 }
     
+struct ComponentSerial : virtual public Component {
+private:
+    int idx = 0;
+public:
+    ComponentRef getCurrent() {
+        return children.at(idx);
+    }
+    
+    void updateAll()                            { getCurrent()->updateAll(); }
+    void drawAll()                              { getCurrent()->drawAll();   }
+    void keyPressed(int key)                    {
+        getCurrent()->keyPressed(key);
+    }
+    void mousePressed(int x, int y, int button) { getCurrent()->mousePressed(x, y, button); }
+    void mouseDragged(int x, int y, int button) { getCurrent()->mouseDragged(x, y, button); }
+    
+    void setIndex(int i) {
+        idx = ofClamp(i, 0, children.size()-1);
+        getCurrent()->setupAll();
+    }
+    int getIndex() { return idx; }
+    void next() { setIndex(idx+1); }
+    void prev() { setIndex(idx-1); }
+};
+    
 }
 
 #include "Components.h"
+
 
 //class SerialScene : public Scene {
 //public:

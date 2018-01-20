@@ -9,19 +9,6 @@ struct Circle_ : public Circle {
     }
 };
 
-struct Repeat : virtual ofx::Component {
-    float length;
-    int count = 0;
-    Repeat(float length = 1) : length(length)
-    {}
-    void update() {
-        if(time > length) {
-            time = 0;
-            setup();
-        }
-    }
-};
-
 struct CircleRepeat : virtual Circle, virtual Repeat {
     using Circle::Circle;
     void setup() {

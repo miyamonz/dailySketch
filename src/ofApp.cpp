@@ -6,7 +6,8 @@
 #include "2018-01-20.h"
 
 
-ofx::ComponentRef root, scenes, menu;
+ofx::ComponentRef root, menu;
+shared_ptr<ofx::ComponentSerial> scenes;
 
 vector<string> items;
 //--------------------------------------------------------------
@@ -15,14 +16,14 @@ void ofApp::setup(){
     auto c = ofGetWindowSize()/2;
     
     root = ofx::Component::createRoot();
-    scenes = root->add<ofx::Component>();
+    scenes = root->add<ofx::ComponentSerial>();
     scenes->add<S20180119>();
     scenes->add<S20180120>();
     
-    items = {
-        "aaaa",
-        "iii"
-    };
+//    items = {
+//        "aaaa",
+//        "iii",
+//    };
     menu = root->add<Selector>(items);
     
     root->setupAll();
@@ -36,7 +37,8 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     int y = 0;
-    ofDrawBitmapStringHighlight(ofToString(root->time),            0,y+=20);
+    ofDrawBitmapStringHighlight(ofToString(root->time),        0,y+=20);
+    ofDrawBitmapStringHighlight(ofToString(scenes->getIndex()),0,y+=20);
     ofSetColor(255);
     root->drawAll();
 }
@@ -47,6 +49,8 @@ void ofApp::keyPressed(int key){
         setup();
     }
     root->keyPressedAll(key);
+    if(key == OF_KEY_RIGHT) scenes->next();
+    if(key == OF_KEY_LEFT)  scenes->prev();
 }
 
 //--------------------------------------------------------------
