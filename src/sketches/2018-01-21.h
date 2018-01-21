@@ -9,7 +9,7 @@ namespace S20180121 {
         }
     };
     
-    struct Drag : virtual public ofx::Component {
+    struct Drag : virtual public ofxComponent {
         using Fn = function<void()>;
         
         bool bDown = false;
@@ -37,7 +37,7 @@ namespace S20180121 {
         void mouseReleased(int x, int y, int button) { up(x,y); }
     };
     
-    struct Sketch : ofx::Component {
+    struct Sketch : ofxComponent {
         Sketch(){ name = "20180121"; }
         
         shared_ptr<Drag> drag;

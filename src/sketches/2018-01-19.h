@@ -17,7 +17,7 @@ namespace S20180119 {
         }
     };
     
-    struct Move : public ofx::Component {
+    struct Move : public ofxComponent {
         ofPoint pos;
         ofPoint prev, next;
         
@@ -61,12 +61,12 @@ namespace S20180119 {
                 auto mo = make_shared<Move>(mouse - rect.position);
                 mo->color = ofColor::fromHsb(hue * 255,100,255);
                 mo->setup();
-                add((ofx::ComponentRef)mo);
+                add((ofxComponentRef)mo);
             }
         }
     };
     
-    struct Sketch : ofx::Component {
+    struct Sketch : ofxComponent {
         Sketch(){ name = "20180119"; }
         virtual void setup() {
             children.clear();

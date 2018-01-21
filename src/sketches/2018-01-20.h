@@ -13,7 +13,7 @@ namespace S20180120 {
         }
     };
     
-    struct Sketch : ofx::Component {
+    struct Sketch : ofxComponent {
         Sketch(){ name = "20180120"; }
         using Cir = CircleRepeat;
         void setup() {

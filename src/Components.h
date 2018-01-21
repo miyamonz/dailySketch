@@ -1,6 +1,7 @@
 #pragma once 
-
-struct Circle : virtual public ofx::Component {
+#include "ofxComponent.h"
+//using ofxComponent = AAAAAAAAAAAA;
+struct Circle : virtual public ofxComponent {
     ofPoint p;
     float radius = 100;
     Circle(ofPoint p) : p(p)
@@ -13,7 +14,7 @@ struct Circle : virtual public ofx::Component {
         ofDrawCircle(p, radius);
     }
 };
-struct Square : virtual public ofx::Component {
+struct Square : virtual public ofxComponent {
     ofPoint p;
     float radius = 100;
     Square(ofPoint p) : p(p)
@@ -27,7 +28,7 @@ struct Square : virtual public ofx::Component {
         ofDrawRectangle(ne, radius, radius);
     }
 };
-struct Rectangle : virtual public ofx::Component {
+struct Rectangle : virtual public ofxComponent {
     ofRectangle rect;
     Rectangle(ofRectangle rect) : rect(rect)
     {}
@@ -41,7 +42,7 @@ struct Rectangle : virtual public ofx::Component {
     }
 };
 
-struct Viewport : virtual public ofx::Component {
+struct Viewport : virtual public ofxComponent {
     ofRectangle rect;
     Viewport(ofRectangle rect) : rect(rect)
     {}
@@ -65,7 +66,7 @@ struct Viewport : virtual public ofx::Component {
     }
 };
 
-struct ViewportRepeat : public ofx::Component {
+struct ViewportRepeat : public ofxComponent {
     void setup() {
         float w = ofGetWindowWidth();
         float h = ofGetWindowHeight();
@@ -82,7 +83,7 @@ struct ViewportRepeat : public ofx::Component {
     }
 };
 
-struct Repeat : virtual ofx::Component {
+struct Repeat : virtual ofxComponent {
     float length;
     int count = 0;
     Repeat(float length = 1) : length(length)
@@ -95,7 +96,7 @@ struct Repeat : virtual ofx::Component {
     }
 };
 
-struct Selector : ofx::Component {
+struct Selector : ofxComponent {
     ofPoint pos;
     vector<string> item;
     int idx = 0;
