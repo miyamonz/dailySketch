@@ -3,10 +3,10 @@
 #include "util.h"
 
 #include "Components.h"
-#include "2018-01-19.h"
-#include "2018-01-20.h"
-#include "2018-01-21.h"
-#include "2018-01-22.h"
+#include "20180119.h"
+#include "20180120.h"
+#include "20180121.h"
+#include "20180122.h"
 
 void add201801(ofxComponentRef scenes) {
     scenes->add<S20180119::Sketch>();
