@@ -59,7 +59,7 @@ void ofApp::setup(){
     
     root = ofx::Component::createRoot();
     scenes = root->add<ofx::ComponentSerial>();
-    scenes->add<S20180119>();
+    scenes->add<S20180119::Sketch>();
     scenes->add<S20180120::Sketch>();
     scenes->add<S20180121::Sketch>();
     scenes->add<S20180122::Sketch>();

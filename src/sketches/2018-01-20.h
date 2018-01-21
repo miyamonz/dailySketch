@@ -1,4 +1,6 @@
 namespace S20180120 {
+    using S20180119::ClickableViewport;
+    
     struct CircleRepeat : virtual Circle, virtual Repeat {
         using Circle::Circle;
         void setup() {

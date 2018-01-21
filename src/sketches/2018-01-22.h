@@ -1,4 +1,5 @@
 namespace S20180122 {
+    using S20180119::CircleExpand;
     
     struct Serial : virtual public ofx::ComponentSerial {
         ofPoint p;
