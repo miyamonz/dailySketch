@@ -53,11 +53,12 @@ struct Viewport : virtual public ofx::Component {
         ofDrawRectangle(rect);
         ofPopStyle();
     }
+    bool bSetupScreen = true;
     void beforeDraw() {
         if(bDrawViewport) drawViewport();
         ofPushView();
         ofViewport(rect);
-        ofSetupScreen();
+        if(bSetupScreen) ofSetupScreen();
     }
     void afterDraw() {
         ofPopView();

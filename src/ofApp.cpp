@@ -1,27 +1,68 @@
 #include "ofApp.h"
-static ofVec2f getMouse() {
-    return ofVec2f(ofGetMouseX(), ofGetMouseY());
-}
+#include "util.h"
+
 #include "ofxQ.h"
 
 #include "Scene.h"
 #include "2018-01-19.h"
 #include "2018-01-20.h"
+#include "2018-01-21.h"
+#include "2018-01-22.h"
 
 ofx::ComponentRef root;
 shared_ptr<ofx::ComponentSerial> scenes;
 shared_ptr<Selector> menu;
 
 vector<string> items;
+
+struct A : enable_shared_from_this<A>{
+    string name;
+    shared_ptr<A> child;
+    
+    A(string name) : name(name) {
+    }
+    
+};
+
+template<class T>
+struct Scoped {
+    static vector<shared_ptr<T>> context;
+    shared_ptr<T> ptr;
+    
+    Scoped(string name) {
+        ofLog() << string(context.size(), '-') << "start " << name;
+        ptr = make_shared<T>(name);
+        if(context.size() > 0) context.back()->child = ptr;
+        context.push_back(ptr);
+    }
+    ~Scoped() {
+        context.pop_back();
+        ofLog() << string(context.size(), '-') << "end " << ptr->name;
+    }
+    shared_ptr<T> operator->() {
+        return ptr;
+    }
+};
+template<class T>
+vector<shared_ptr<T>> Scoped<T>::context;
 //--------------------------------------------------------------
 void ofApp::setup(){
+//    Scoped<A> a("a");
+//    {
+//        Scoped<A> s("_a");
+//        Scoped<A> b("_b");
+//    }
+//    ofLog() << "after " << a->name;
+//    ofLog() << "after " << a->child->name;
     ofSetCircleResolution(50);
     auto c = ofGetWindowSize()/2;
     
     root = ofx::Component::createRoot();
     scenes = root->add<ofx::ComponentSerial>();
     scenes->add<S20180119>();
-    scenes->add<S20180120>();
+    scenes->add<S20180120::Sketch>();
+    scenes->add<S20180121::Sketch>();
+    scenes->add<S20180122::Sketch>();
     
     items.clear();
     for(auto s : scenes->children) {
@@ -50,12 +91,10 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    if(key == 'r') {
-        setup();
-    }
     root->keyPressedAll(key);
-    if(key == OF_KEY_RIGHT) scenes->next();
-    if(key == OF_KEY_LEFT)  scenes->prev();
+    if(key == 'r') { setup(); }
+    if(key == OF_KEY_UP)  scenes->prev();
+    if(key == OF_KEY_DOWN) scenes->next();
 }
 
 //--------------------------------------------------------------

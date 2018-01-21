@@ -27,6 +27,17 @@ struct Component : public ofBaseApp {
         children.emplace_back(com);
         com->parent = this;
     }
+    vector<ComponentRef> addVec;
+    template<typename S = Component, typename... Args>
+    shared_ptr<S> addAfter(Args... args) {
+        auto com = make_shared<S>(args...);
+        addAfter((ComponentRef)com);
+        return com;
+    }
+    void addAfter(ComponentRef com) {
+        addVec.emplace_back(com);
+        com->parent = this;
+    }
     
     //kaisou
     template<class Fn, typename... Args>
@@ -55,6 +66,14 @@ struct Component : public ofBaseApp {
         fn1(args...);
     }
     
+    template<class... Args, class FP_ = FP<Args...>>
+    void callChildren(FP_ ptr, Args... args) {
+        for(auto&& c : children) {
+            if(c.get() == nullptr) continue;
+            auto fn = std::bind(ptr, c.get(), args...);
+            fn(args...);
+        }
+    }
     virtual void setup() { time = 0; }
     virtual void updateTime() {
         time += ofGetLastFrameTime();
@@ -65,15 +84,21 @@ struct Component : public ofBaseApp {
     }
     virtual void setupAll()  {
         setup();
-        for(auto&& c : children) c->setupAll();
-//        recursiveCall(&Component::setup);
+        callChildren(&Component::setupAll);
     }
-    
+    void _moveChild() {
+        if(addVec.size() > 0) {
+            copy(addVec.begin(), addVec.end(), back_inserter(children));
+            addVec.clear();
+        }
+        
+    }
     virtual void updateAll() {
         updateTime();
         update();
+        _moveChild();
         removeChild();
-        for(auto&& c : children) c->updateAll();
+        callChildren(&Component::updateAll);
     }
     
     virtual void beforeDraw() {}
@@ -81,24 +106,24 @@ struct Component : public ofBaseApp {
     virtual void drawAll() {
         beforeDraw();
         draw();
-        for(auto&& c : children) c->drawAll();
+        callChildren(&Component::drawAll);
         afterDraw();
     }
     virtual void keyPressedAll(int key) {
         keyPressed(key);
-        for(auto&& c : children) c->keyPressedAll(key);
+        callChildren(&Component::keyPressedAll, key);
     }
     virtual void mousePressedAll(int x, int y, int button) {
         mousePressed(x, y, button);
-        for(auto&& c : children) c->mousePressedAll(x,y,button);
+        callChildren(&Component::mousePressedAll, x, y, button);
     }
     virtual void mouseReleasedAll(int x, int y, int button) {
         mouseReleased(x, y, button);
-        for(auto&& c : children) c->mouseReleasedAll(x,y,button);
+        callChildren(&Component::mouseReleasedAll, x, y, button);
     }
     virtual void mouseDraggedAll(int x, int y, int button) {
         mouseDragged(x, y, button);
-        for(auto&& c : children) c->mouseDraggedAll(x,y,button);
+        callChildren(&Component::mouseDraggedAll, x, y, button);
     }
     
     bool bDone = false;
@@ -113,7 +138,7 @@ ComponentRef Component::createRoot() {
     return com;
 }
     
-struct ComponentSerial : virtual public Component {
+struct ComponentSerialBase : virtual public Component {
 private:
     int idx = 0;
 public:
@@ -121,13 +146,11 @@ public:
         return children.at(idx);
     }
     
-    void updateAll()                            { getCurrent()->updateAll(); }
-    void drawAll()                              { getCurrent()->drawAll();   }
-    void keyPressed(int key)                    {
-        getCurrent()->keyPressed(key);
-    }
-    void mousePressed(int x, int y, int button) { getCurrent()->mousePressed(x, y, button); }
-    void mouseDragged(int x, int y, int button) { getCurrent()->mouseDragged(x, y, button); }
+    void updateAll()                            { if(children.size() == 0) return; getCurrent()->updateAll(); }
+    void drawAll()                              { if(children.size() == 0) return; getCurrent()->drawAll();   }
+    void keyPressed(int key)                    { if(children.size() == 0) return; getCurrent()->keyPressed(key); }
+    void mousePressed(int x, int y, int button) { if(children.size() == 0) return; getCurrent()->mousePressed(x, y, button); }
+    void mouseDragged(int x, int y, int button) { if(children.size() == 0) return; getCurrent()->mouseDragged(x, y, button); }
     
     void setIndex(int i) {
         idx = ofClamp(i, 0, children.size()-1);
@@ -137,6 +160,22 @@ public:
     void next() { setIndex(idx+1); }
     void prev() { setIndex(idx-1); }
 };
+
+    struct ComponentSerial : virtual public ComponentSerialBase {
+        void update() {
+            auto done = getCurrent()->bDone;
+            if(done) {
+                if(getIndex() < children.size()-1) next();
+                else bDone = true;
+            }
+        }
+        void updateAll() {
+            if(children.size() == 0) return;
+            update();
+            ComponentSerialBase::updateAll();
+            
+        }
+    };
     
 }
 

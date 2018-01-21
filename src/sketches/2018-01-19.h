@@ -4,7 +4,6 @@ struct CircleExpand : virtual public Circle {
     
     void draw() override {
         auto e = 1-pow(1-time, 5);
-        
         if(e >= 1) {
             e = 1;
             bDone = true;
