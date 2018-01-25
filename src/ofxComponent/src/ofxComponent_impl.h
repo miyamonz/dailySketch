@@ -4,6 +4,10 @@
 struct ofxComponent;
 using ofxComponentRef = shared_ptr<ofxComponent>;
 
+struct ComponentInterface : public ofBaseApp {
+    virtual void add(ofxComponentRef);
+};
+
 struct ofxComponent : public ofBaseApp {
     string name;
     float time;

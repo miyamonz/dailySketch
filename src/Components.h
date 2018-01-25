@@ -1,6 +1,6 @@
 #pragma once 
 #include "ofxComponent.h"
-//using ofxComponent = AAAAAAAAAAAA;
+
 struct Circle : virtual public ofxComponent {
     ofPoint p;
     float radius = 100;
