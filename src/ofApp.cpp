@@ -84,7 +84,7 @@ void ofApp::update(){
     ofPushView();
     ofViewport(ofRectangle(0,0,300,200));
     ofSetupScreen();
-    ofDrawCircle(0, 0, 100);
+    //ofDrawCircle(0, 0, 100);
     ofPopView();
     fbo.end();
 }

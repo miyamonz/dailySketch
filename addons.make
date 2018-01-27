@@ -1,2 +1,4 @@
 ofxChoreograph
+ofxCv
+ofxOpenCv
 ofxPostGlitch
