@@ -1,6 +1,4 @@
 #pragma once
-
-
 namespace S20180127 {
     
     map<int,int> kumi;
@@ -8,11 +6,18 @@ namespace S20180127 {
     constexpr int num = 10;
     int current = 0;
     
+    shared_ptr<Circle> drag;
+    bool draging;
+    
     struct Sketch : ofxComponent {
         Sketch(){ name = "20180127"; }
         void setup() {
             children.clear();
             setKumi();
+         
+            drag = add<Circle>(ofPoint(ofGetWindowSize()/2));
+            drag->radius = 10;
+            draging = false;
         }
         void setKumi() {
             array<int, num> arr;
@@ -34,13 +39,17 @@ namespace S20180127 {
             }
         }
         ofRectangle rect;
+        
+        bool inside() {
+            return getMouse().distance(drag->p) < drag->radius;
+        }
         void update() {
             rect = ofRectangle(downPoint, upPoint);
             if(time > 1) {
                 time -= 1;
                 current = kumi[current];
             }
-
+            drag->color = inside() ? ofColor::red : ofColor::white;
         }
         ofPoint in(int i) {
             return rect.position + ofPoint(rect.width*i/(num-1),0);
@@ -62,14 +71,19 @@ namespace S20180127 {
             auto t = time;
             auto p = in(current).getInterpolated(out(kumi[current]),t);
             ofDrawCircle(p , 15);
+            
+            if(draging) ofDrawLine(drag->p, getMouse());
+            
         }
         
         ofVec2f downPoint, upPoint;
         void mousePressed(int x, int y, int button) {
             downPoint = ofVec2f(x,y);
+            if(inside()) draging = true;
         }
         void mouseReleased(int x, int y, int button) {
             upPoint = ofVec2f(x,y);
+            draging = false;
         }
     };
 }
