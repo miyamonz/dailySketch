@@ -8,6 +8,7 @@
 #include "20180121.h"
 #include "20180122.h"
 #include "20180127.h"
+#include "20180128.h"
 
 void add201801(ofxComponentRef scenes) {
     scenes->add<S20180119::Sketch>();
@@ -15,4 +16,5 @@ void add201801(ofxComponentRef scenes) {
     scenes->add<S20180121::Sketch>();
     scenes->add<S20180122::Sketch>();
     scenes->add<S20180127::Sketch>();
+    scenes->add<S20180128::Sketch>();
 }
