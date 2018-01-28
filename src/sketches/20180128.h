@@ -1,5 +1,23 @@
 #pragma once
 namespace S20180128 {
+    struct CircleExpand : virtual public Circle {
+        using Circle::Circle;
+        
+        void draw() override {
+            auto e = 1-pow(1-time, 5);
+            if(e >= 1) {
+                e = 1;
+                bDone = true;
+            }
+            auto t = ofMap(e, 0, 1, 0, radius);
+            auto r = ofClamp(t, 0, radius);
+            
+            ofSetColor(color);
+            ofNoFill();
+            ofDrawCircle(p, r);
+        }
+    };
+    
     struct Node;
     using NodeRef = shared_ptr<Node>;
     struct GrabData {
@@ -19,7 +37,9 @@ namespace S20180128 {
         float radius = 20;
         void draw() {
             ofPushStyle();
-            ofSetColor( canGrab(getMouse()) ? ofColor::red : 255);
+            auto b = canGrab(getMouse());
+            b ? ofFill() : ofNoFill();
+            ofSetColor( b ? ofColor::red : 255);
             ofDrawCircle(position, radius);
             ofPopStyle();
         }
@@ -60,8 +80,42 @@ namespace S20180128 {
                 auto p = c + ofVec2f(200, 0).rotate(360.*i/num);
                 nodes.emplace_back(make_shared<Node>(p));
             }
+            current = nodes[0];
         }
+        NodeRef current;
+        float param = 0;
+        NodeRef getNext(NodeRef now) {
+            for(auto& l : links) {
+                if(l.start == now) return l.end;
+            }
+            return nullptr;
+        }
+        ofPoint currentPos() {
+            auto next = getNext(current);
+            if(!next) return current->position;
+            return current->position.getInterpolated(next->position, param);
+        }
+
         void update() {
+            auto next = getNext(current);
+            if(next) {
+                param += ofGetLastFrameTime();
+            }
+            if(param > 1) {
+                param = 0;
+                if(next) current = next;
+                auto c = add<CircleExpand>(next->position);
+                c->radius = 50;
+            }
+            if(next) {
+                int i=0;
+                auto c = ofGetWindowSize()/2;
+                for(auto& n : nodes) {
+                    ofPoint p = ofVec2f(200,0).rotate(360.*i/num);
+//                    n->position = c +p + p.getScaled(50) * sin(2*time + 7 * i * TWO_PI / num);
+                    i++;
+                }
+            }
         }
         void draw() {
             if(ofGetMousePressed()) {
@@ -73,6 +127,9 @@ namespace S20180128 {
 
             if(grab.grabing)
                 ofDrawArrow( grab.node->position, getMouse(), 10);
+            
+            ofSetColor(200,20,255);
+            ofDrawCircle(currentPos(), 10);
         }
         GrabData grab;
         void mousePressed(int x, int y, int button) {
